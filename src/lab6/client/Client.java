@@ -6,7 +6,7 @@ import java.net.*;
 import javax.swing.*;
 import java.io.*;
 
-public class MyClientWin extends Applet implements Runnable
+public class Client extends Applet implements Runnable
 {
 	static boolean bConnected = false;
 	
@@ -189,7 +189,7 @@ public class MyClientWin extends Applet implements Runnable
 		//
 		// define window and call standard methods
 		//
-		MyClientWin app = new MyClientWin();
+		Client app = new Client();
 		Frame frame = new Frame ("Andrew Idzikowski - Client Chatting Program");
 		app.init();
 		app.start();

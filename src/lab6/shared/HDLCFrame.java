@@ -15,6 +15,7 @@ public class HDLCFrame {
     private static final int CONTROL_LENGTH = 8;
     private static final int TYPE_LENGTH = 2;
     private static final int MINIMUM_ADDRESS_LENGTH = 8;
+    private static final int BYTE_LENGTH = 8;
     public static final String VALID_FRAME_TYPES = "ISU";
     public static final String RR = "00";
     public static final String RNR = "01";
@@ -33,7 +34,7 @@ public class HDLCFrame {
     public static final String XID = "11101";
     public static final String FRMR = "10001";
     public static final int WINDOW_LENGTH = 3;
-    public static final int MAX_DATA_LENGTH = 64*8;
+    public static final int MAX_DATA_LENGTH = 64;
 
     private final int address;
     private final int seqRcv;
@@ -176,19 +177,29 @@ public class HDLCFrame {
             System.out.println("End flag is missing. Dropping frame.");
             return null;
         }
-        String data = frame.substring(0, index);
+
+        check = frame.substring(0, index);
+        StringBuilder strngbldr = new StringBuilder();
         if (frameType == 'S' || frameType == 'U') {
-            if (data.length() > 0) {
+            if (check.length() > 0) {
                 System.out.println("S-frames and U-frames shouldn't contain data. Dropping frame.");
                 return null;
             }
         }
         else if (frameType == 'I') {
-            if (data.length() > MAX_DATA_LENGTH) {
-                System.out.println("Maximum data length exceeded. Dropping frame.");
+            if (check.length() > MAX_DATA_LENGTH*BYTE_LENGTH || check.length() % BYTE_LENGTH != 0) {
+                System.out.println("Data length not valid. Dropping frame.");
                 return null;
             }
+            else if (!isValidBinary(check)) {
+                System.out.println("Data not valid. Dropping frame.");
+                return null;
+            }
+            for (int i = 0; i < check.length()/BYTE_LENGTH; i ++) {
+                strngbldr.append((char)Integer.parseInt(check.substring(i*BYTE_LENGTH, (i + 1)*BYTE_LENGTH), 2));
+            }
         }
+        String data = strngbldr.toString();
 
         HDLCFrameBuilder builder = HDLCFrame.getHDLCFrameBuilder(address, poll, frameType);
         if (builder == null) {
@@ -245,7 +256,9 @@ public class HDLCFrame {
         }
 
         if (frameType == 'I') {
-            builder.append(data);
+            for (int i = 0; i < data.length(); i ++) {
+                builder.append(toBinaryString(data.charAt(i), BYTE_LENGTH));
+            }
         }
 
         builder.append(FLAG);
@@ -282,9 +295,19 @@ public class HDLCFrame {
 
     //Running some simple tests
     public static void main (String[] args) {
-        String strng = "0111111000000000.1100000001111110";
-        HDLCFrame test = HDLCFrame.valueOf(strng);
-        System.out.println(test.toString());
+        HDLCFrameBuilder builder = HDLCFrame.getHDLCFrameBuilder(127, true, 'I');
+        builder.setData("Testing");
+        builder.setSeqRcv(5);
+        builder.setSeqSend(4);
+        HDLCFrame test = builder.getHDLCFrame();
+        String strng = test.toString();
         System.out.println(strng);
+        test = HDLCFrame.valueOf(strng);
+        System.out.println(test.getAddress());
+        System.out.println(test.getPoll());
+        System.out.println(test.getFrameType());
+        System.out.println(test.getData());
+        System.out.println(test.getSeqRcv());
+        System.out.println(test.getSeqSend());
     }
 }

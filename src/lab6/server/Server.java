@@ -13,6 +13,7 @@ import javax.swing.JOptionPane;
 public class Server {
 	 //Get Port to run server on
 	static int listenPort = Integer.parseInt(JOptionPane.showInputDialog("Enter Port to listen on\n"));
+
     public static void main(String[] args) throws Exception {
         int clientNumber = 0;
         ServerSocket listener = new ServerSocket(listenPort);
